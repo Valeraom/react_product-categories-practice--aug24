@@ -10,6 +10,14 @@ import productsFromServer from './api/products';
 const USER_VALUES = ['All', 'Roma', 'Anna', 'Max', 'John'];
 const USER_DEFAULT_VALUE = USER_VALUES[0];
 
+const CATEGORY_VALUES = [
+  'Grocery',
+  'Drinks',
+  'Fruits',
+  'Electronics',
+  'Clothes',
+];
+
 const products = productsFromServer.map(product => {
   const category = categoriesFromServer.find(
     categoryItem => categoryItem.id === product.categoryId,
@@ -26,7 +34,10 @@ const products = productsFromServer.map(product => {
   };
 });
 
-const getVisibleProducts = (inputProducts, { userFilter, nameFilter }) => {
+const getVisibleProducts = (
+  inputProducts,
+  { userFilter, nameFilter, selectedCategories },
+) => {
   let preparedProducts = [...inputProducts];
 
   if (userFilter !== 'All') {
@@ -45,21 +56,44 @@ const getVisibleProducts = (inputProducts, { userFilter, nameFilter }) => {
     });
   }
 
+  if (selectedCategories.length) {
+    preparedProducts = preparedProducts.filter(
+      product => selectedCategories.includes(product.category.title),
+      // eslint-disable-next-line prettier/prettier
+    );
+  }
+
   return preparedProducts;
 };
 
 export const App = () => {
   const [userFilter, setUserFilter] = useState(USER_DEFAULT_VALUE);
   const [nameFilter, setNameFilter] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
 
   const visibleProducts = getVisibleProducts(products, {
     userFilter,
     nameFilter,
+    selectedCategories,
   });
 
   const handleResetFilters = () => {
     setUserFilter(USER_DEFAULT_VALUE);
     setNameFilter('');
+  };
+
+  const handleSetCategories = category => {
+    const isSelected = selectedCategories.includes(category);
+
+    if (!isSelected) {
+      setSelectedCategories(currentState => [...currentState, category]);
+    }
+
+    if (isSelected) {
+      setSelectedCategories(
+        selectedCategories.filter(categoryItem => categoryItem !== category),
+      );
+    }
   };
 
   return (
@@ -74,7 +108,7 @@ export const App = () => {
               {USER_VALUES.map(user => (
                 <a
                   key={user}
-                  data-cy="FilterAllUsers"
+                  data-cy={user === 'All' ? 'FilterAllUsers' : 'FilterUser'}
                   href="#/"
                   className={cn({ 'is-active': user === userFilter })}
                   onClick={() => setUserFilter(user)}
@@ -117,33 +151,27 @@ export const App = () => {
               <a
                 href="#/"
                 data-cy="AllCategories"
-                className="button is-success mr-6 is-outlined"
+                className={cn('button is-success mr-6', {
+                  'is-outlined': selectedCategories.length,
+                })}
+                onClick={() => setSelectedCategories([])}
               >
                 All
               </a>
 
-              <a
-                data-cy="Category"
-                className="button mr-2 my-1 is-info"
-                href="#/"
-              >
-                Category 1
-              </a>
-
-              <a data-cy="Category" className="button mr-2 my-1" href="#/">
-                Category 2
-              </a>
-
-              <a
-                data-cy="Category"
-                className="button mr-2 my-1 is-info"
-                href="#/"
-              >
-                Category 3
-              </a>
-              <a data-cy="Category" className="button mr-2 my-1" href="#/">
-                Category 4
-              </a>
+              {CATEGORY_VALUES.map(category => (
+                <a
+                  key={category}
+                  data-cy="Category"
+                  className={cn('button mr-2 my-1', {
+                    'is-info': selectedCategories.includes(category),
+                  })}
+                  href="#/"
+                  onClick={() => handleSetCategories(category)}
+                >
+                  {category}
+                </a>
+              ))}
             </div>
 
             <div className="panel-block">
