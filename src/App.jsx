@@ -26,7 +26,7 @@ const products = productsFromServer.map(product => {
   };
 });
 
-const getVisibleProducts = (inputProducts, { userFilter }) => {
+const getVisibleProducts = (inputProducts, { userFilter, nameFilter }) => {
   let preparedProducts = [...inputProducts];
 
   if (userFilter !== 'All') {
@@ -35,13 +35,27 @@ const getVisibleProducts = (inputProducts, { userFilter }) => {
     );
   }
 
+  const normalizedNameFilter = nameFilter.toLowerCase().trim();
+
+  if (normalizedNameFilter) {
+    preparedProducts = preparedProducts.filter(product => {
+      const normalizedProduct = product.name.toLowerCase().trim();
+
+      return normalizedProduct.includes(normalizedNameFilter);
+    });
+  }
+
   return preparedProducts;
 };
 
 export const App = () => {
   const [userFilter, setUserFilter] = useState(USER_DEFAULT_VALUE);
+  const [nameFilter, setNameFilter] = useState('');
 
-  const visibleProducts = getVisibleProducts(products, { userFilter });
+  const visibleProducts = getVisibleProducts(products, {
+    userFilter,
+    nameFilter,
+  });
 
   return (
     <div className="section">
@@ -54,6 +68,7 @@ export const App = () => {
             <p className="panel-tabs has-text-weight-bold">
               {USER_VALUES.map(user => (
                 <a
+                  key={user}
                   data-cy="FilterAllUsers"
                   href="#/"
                   className={cn({ 'is-active': user === userFilter })}
@@ -71,7 +86,8 @@ export const App = () => {
                   type="text"
                   className="input"
                   placeholder="Search"
-                  value="qwe"
+                  value={nameFilter}
+                  onChange={event => setNameFilter(event.target.value)}
                 />
 
                 <span className="icon is-left">
@@ -80,11 +96,14 @@ export const App = () => {
 
                 <span className="icon is-right">
                   {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-                  <button
-                    data-cy="ClearButton"
-                    type="button"
-                    className="delete"
-                  />
+                  {nameFilter && (
+                    <button
+                      data-cy="ClearButton"
+                      type="button"
+                      className="delete"
+                      onClick={() => setNameFilter('')}
+                    />
+                  )}
                 </span>
               </p>
             </div>
@@ -190,18 +209,17 @@ export const App = () => {
                 </th>
               </tr>
             </thead>
+            <tbody>
+              {visibleProducts.map(product => {
+                const {
+                  id,
+                  name: productName,
+                  category: { icon, title },
+                  user: { name: userName, sex },
+                } = product;
 
-            {visibleProducts.map(product => {
-              const {
-                id,
-                name: productName,
-                category: { icon, title },
-                user: { name: userName, sex },
-              } = product;
-
-              return (
-                <tbody>
-                  <tr data-cy="Product">
+                return (
+                  <tr data-cy="Product" key={id}>
                     <td className="has-text-weight-bold" data-cy="ProductId">
                       {id}
                     </td>
@@ -221,9 +239,9 @@ export const App = () => {
                       {userName}
                     </td>
                   </tr>
-                </tbody>
-              );
-            })}
+                );
+              })}
+            </tbody>
           </table>
         </div>
       </div>
